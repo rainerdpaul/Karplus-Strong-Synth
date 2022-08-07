@@ -5,15 +5,18 @@
 #                                         #
 ###########################################
 
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io.wavfile import write
+from Effects import *
 
-# Setting sample rate
-Fs = 44100
-OUTMONO = None
+setup = open("Setup.txt", "r")
+Fs = int(setup.readlines()[1])
+
+WAVEFORM = None
 OUTSTER = None
 
-# Create or access existing saveddata.dat file
+# Create or access existing save.dat file
 # Used for updating file number for Sound#.wav
 def filenum(filename="saveddata.dat"):
     with open(filename, "a+") as f:
@@ -40,24 +43,23 @@ def karpstrong(hz, seconds, model=None, timbre=1):
         wave = np.random.randint(0, 2, excitation_len) * 2 - 1
         out = wave.astype(np.float32)
 
+    waveform = out
+
     while len(out) < num_samples:
         out = np.append(out, wave)
 
-    # 1-channel output
-    out = out[0:num_samples]
-    global OUTMONO
-    OUTMONO = out
-    # 2-channel output
-    out = np.insert(np.expand_dims(out, axis=1), 1, out, axis=1)
-    global OUTSTER
-    OUTSTER = out
-    return out
+    # 2-Channel output
+    out = np.insert(np.expand_dims(out[0:num_samples], axis=0), 1, out[0:num_samples], axis=0)
+    return waveform, out
 
 
 def to_wav(arr):
+    arr = np.asarray(np.rot90(np.fliplr(arr)))
     write("Sound" + str(filenum()) + ".wav", Fs, arr)
 
 
 # Example
-karpstrong(60, 1, "noise", 25)
+WAVEFORM, OUTSTER = karpstrong(60, 1, "noise", 1)
+OUTSTER = haas_effect(OUTSTER, 160, "Left")
+OUTSTER = gain(OUTSTER, 0.3)
 to_wav(OUTSTER)
