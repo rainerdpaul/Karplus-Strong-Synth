@@ -1,0 +1,2 @@
+Sample Rate 'Fs'
+44100
